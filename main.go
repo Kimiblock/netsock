@@ -45,14 +45,13 @@ func echo(lvl string, msg string) {
 	This builds a nft file, caller should close channel to indicate done
 */
 func buildNftFile (
-	nftchan chan string,
-	builder strings.Builder,
 	tableName string,
 	outperm appOutPerms,
 ) string {
-	if outperm.appID == "" {
+	builder := strings.Builder{}
+	if len(outperm.appID) == 0 {
 		echo("warn", "This appID is invalid")
-		return
+		return ""
 	}
 	v4DenyList := []string{}
 	v6DenyList := []string{}
@@ -85,7 +84,13 @@ func buildNftFile (
 							continue
 					}
 				} else {
-					addrs := net.LookupHost(val)
+					addrs, err := net.LookupHost(val)
+					if err != nil {
+						echo(
+						"warn",
+						"Could not resolve host " + val + ": " + err.Error(),
+						)
+					}
 					for _, addr := range addrs {
 						tryResV4 := net.ParseIP(addr)
 						switch tryResV4 {
@@ -158,6 +163,8 @@ func buildNftFile (
 
 
 	builder.WriteString("\n}")
+
+	return builder.String()
 }
 
 /* Returns whether the operation is success or not */
@@ -183,12 +190,7 @@ func setAppPerms(appCgroup string, outperm appOutPerms, appID string, sandboxEng
 		log.Println("Deleted previous table")
 	}
 
-	builder := strings.Builder{}
-
-	nftChan := make(chan nftType, 10)
-	nftFile := buildNftFile(nftChan, builder, sandboxEng + "-" + appID)
-
-	nftChan <-
+	nftFile := buildNftFile(sandboxEng + "-" + appID, outperm)
 
 
 	return true
