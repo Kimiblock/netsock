@@ -94,8 +94,12 @@ func buildNftFile (
 
 	builder.WriteString("chain charcoal {\n")
 		builder.WriteString("type filter hook output priority filter; policy accept; {\n")
-			builder.WriteString("tcp dport 53 accept")
-			builder.WriteString("udp dport 53 accept")
+			builder.WriteString(
+				"socket cgroupv2 level 6 " + outperm.appGPath + "tcp dport 53 accept",
+			)
+			builder.WriteString(
+				"socket cgroupv2 level 6 " + outperm.appGPath + "udp dport 53 accept",
+			)
 			builder.WriteString(
 				"socket cgroupv2 level 6 " + outperm.appGPath + " ip daddr @v4reject drop\n",
 			)
