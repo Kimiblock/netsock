@@ -32,6 +32,8 @@ var (
 type appOutPerms struct {
 	allowIP			[]string
 	denyIP			[]string
+	appID			[]string
+	appGPath		string
 }
 
 func echo(lvl string, msg string) {
@@ -47,6 +49,10 @@ func buildNftFile (
 	tableName string,
 	outperm appOutPerms,
 ) string {
+	if outperm.appID == "" {
+		echo("warn", "This appID is invalid")
+		return
+	}
 	v4DenyList := []string{}
 	v6DenyList := []string{}
 	for idx, val := range outperm.denyIP {
@@ -71,11 +77,12 @@ func buildNftFile (
 						case nil:
 							echo("debug", "Resolved " + val + " as IPv6")
 							v6DenyList = append(v6DenyList, string(ipRes))
+							continue
 						default:
 							echo("debug", "Resolved " + val + " as IPv4")
 							v4DenyList = append(v4DenyList, string(ipRes.To4()))
+							continue
 					}
-
 				}
 		}
 	}
@@ -89,6 +96,12 @@ func buildNftFile (
 		builder.WriteString("type filter hook output priority filter; policy accept; {\n")
 			builder.WriteString("tcp dport 53 accept")
 			builder.WriteString("udp dport 53 accept")
+			builder.WriteString(
+				"socket cgroupv2 level 6 " + outperm.appGPath + " ip daddr @v4reject drop\n",
+			)
+			builder.WriteString(
+				"socket cgroupv2 level 6 " + outperm.appGPath + " ip daddr @v6reject drop \n",
+			)
 		builder.WriteString("}\n")
 	builder.WriteString("}\n")
 
