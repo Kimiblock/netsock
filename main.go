@@ -6,6 +6,7 @@ import (
 	//"os"
 	"golang.org/x/sys/unix"
 	//"strings"
+	"net"
 
 	"github.com/google/nftables"
 	"github.com/Kimiblock/pecho"
@@ -30,6 +31,10 @@ var (
 type appOutPerms struct {
 	allowIP		[]string
 	denyIP		[]string
+}
+
+func echo(lvl string, msg string) {
+	logChan <- []string{lvl, msg}
 }
 
 /* Returns whether the operation is success or not */
@@ -70,8 +75,45 @@ func setAppPerms(appCgroup string, outperm appOutPerms, appID string, sandboxEng
 		Policy:		&dropPolicy,
 	}
 
+	denyList := []string{}
+	rejectSet4 := nftables.Set {
+		Table:		tableRet,
+		Name:		"Denylist",
+		Interval:	true,
+		KeyType:	nftables.TypeIPAddr,
+	}
+	rejElement4 := []nftables.SetElement {}
+	rejectSet6 := nftables.Set {
+		Table:		tableRet,
+		Name:		"Denylist6",
+		Interval:	true,
+		KeyType:	nftables.TypeIP6Addr,
+	}
 	// Here comes the rules
-	//for
+	for _, rule := range outperm.denyIP {
+		echo("debug", "Processing rule: " + rule)
+		switch rule {
+			case "private":
+				rejElement4 = append(rejElement4, []nftables.SetElement{
+					{
+						Key:		net.ParseIP("10.0.0.0").To4(),
+						KeyEnd:		net.ParseIP("10.255.255.255").To4(),
+					},
+					{
+						Key:		net.ParseIP("172.16.0.0").To4(),
+						KeyEnd:		net.ParseIP("172.31.255.255").To4(),
+					},
+					{
+						Key:		net.ParseIP("192.168.0.0").To4(),
+						KeyEnd:		net.ParseIP("192.168.255.255").To4(),
+					},
+				}...)
+		}
+	}
+	err = connNft.AddSet(&rejectSet4, rejElement4)
+	if err != nil {
+		echo("debug", "Could not add IPv4 set for blocking: " + err.Error())
+	}
 
 	return true
 }
