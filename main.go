@@ -23,10 +23,8 @@ var (
 )
 
 /* Special strings may be interpreted
-	localhost	127.0.0.0/8 ::1/128
-	link-local	169.254.0.0/16 fe80::/64
 	private		10.0.0.0 - 10.255.255.255, 172.16.0.0 - 172.31.255.255, 192.168.0.0 - 192.168.255.255 and fd00::/8
-
+	Custom IPs not supported yet.
 */
 type appOutPerms struct {
 	allowIP		[]string
@@ -89,6 +87,7 @@ func setAppPerms(appCgroup string, outperm appOutPerms, appID string, sandboxEng
 		Interval:	true,
 		KeyType:	nftables.TypeIP6Addr,
 	}
+	rejElement6 := []nftables.SetElement {}
 	// Here comes the rules
 	for _, rule := range outperm.denyIP {
 		echo("debug", "Processing rule: " + rule)
@@ -108,11 +107,22 @@ func setAppPerms(appCgroup string, outperm appOutPerms, appID string, sandboxEng
 						KeyEnd:		net.ParseIP("192.168.255.255").To4(),
 					},
 				}...)
+				rejElement6 = append(rejElement6, []nftables.SetElement{
+					{
+						Key:		net.ParseIP("fd00::"),
+						KeyEnd:		net.ParseIP("fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"),
+					},
+
+				}...)
 		}
 	}
 	err = connNft.AddSet(&rejectSet4, rejElement4)
 	if err != nil {
 		echo("debug", "Could not add IPv4 set for blocking: " + err.Error())
+	}
+	err = connNft.AddSet(&rejectSet6, rejElement6)
+	if err != nil {
+		echo("debug", "Could not add IPv6 set for blocking: " + err.Error())
 	}
 
 	return true
