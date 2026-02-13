@@ -4,9 +4,10 @@ import (
 	//"fmt"
 	"log"
 	"net"
-	//"os"
+	"os/exec"
 	"strings"
 	"strconv"
+	"io"
 
 	"golang.org/x/sys/unix"
 
@@ -189,6 +190,32 @@ func setAppPerms(appCgroup string, outperm appOutPerms, appID string, sandboxEng
 	}
 
 	nftFile := buildNftFile(sandboxEng + "-" + appID, outperm)
+	if len(nftFile) == 0 {
+		echo("warn", "Could not read generated nftfile")
+		return false
+	}
+
+	echo("debug", "Got generated rule: " + nftFile)
+
+
+	cmd := exec.Command("nft", "-c", "-f")
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		echo("warn", "Could not pipe stdin" + err.Error())
+		return false
+	}
+	_, err = io.WriteString(stdin, nftFile)
+	if err != nil {
+		echo("warn", "Could not write stdin: " + err.Error())
+		return false
+	}
+	stdin.Close()
+
+	err = cmd.Wait()
+	if err != nil {
+		echo("warn", "nft failed to test rules: " + err.Error())
+		return false
+	}
 
 
 	return true
