@@ -108,7 +108,35 @@ func buildNftFile (
 
 
 
+
+
 	builder.WriteString("table inet " + tableName + " {\n")
+
+	builder.WriteString("set v4reject {\n")
+		builder.WriteString("type ipv4_addr;\n")
+		builder.WriteString("flags interval;\n")
+			builder.WriteString("elements = {\n")
+			for idx, val := range v4DenyList {
+				if idx > 0 {
+					builder.WriteString(",\n")
+				}
+				builder.WriteString(val)
+			}
+			builder.WriteString("}\n")
+	builder.WriteString("}\n")
+
+	builder.WriteString("set v6reject {\n")
+		builder.WriteString("type ipv6_addr;\n")
+		builder.WriteString("flags interval;\n")
+			builder.WriteString("elements = {\n")
+			for idx, val := range v6DenyList {
+				if idx > 0 {
+					builder.WriteString(",\n")
+				}
+				builder.WriteString(val)
+			}
+			builder.WriteString("}\n")
+	builder.WriteString("}\n")
 
 	builder.WriteString("chain charcoal {\n")
 		builder.WriteString("type filter hook output priority filter;\n")
