@@ -76,11 +76,11 @@ func buildNftFile (
 					switch tryResv4 {
 						case nil:
 							echo("debug", "Resolved " + val + " as IPv6")
-							v6DenyList = append(v6DenyList, string(ipRes))
+							v6DenyList = append(v6DenyList, ipRes.String())
 							continue
 						default:
 							echo("debug", "Resolved " + val + " as IPv4")
-							v4DenyList = append(v4DenyList, string(ipRes.To4()))
+							v4DenyList = append(v4DenyList, ipRes.To4().String())
 							continue
 					}
 				} else {
@@ -97,12 +97,12 @@ func buildNftFile (
 							case nil:
 								v6DenyList = append(
 									v6DenyList,
-									string(tryResV4),
+									tryResV4.String(),
 								)
 							default:
 								v4DenyList = append(
 									v4DenyList,
-									string(tryResV4.To4()),
+									tryResV4.To4().String(),
 								)
 						}
 					}
