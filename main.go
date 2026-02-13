@@ -2,15 +2,19 @@ package main
 
 import (
 	//"fmt"
+	"io"
 	"log"
 	"net"
+	"net/http"
+	"os"
 	"os/exec"
-	"strings"
 	"strconv"
-	"io"
-
+	"strings"
+	"encoding/json"
 	"golang.org/x/sys/unix"
 
+	"os/signal"
+	"syscall"
 	"github.com/Kimiblock/pecho"
 	"github.com/google/nftables"
 )
@@ -34,6 +38,11 @@ type appOutPerms struct {
 	denyIP			[]string
 	appID			[]string
 	appGPath		string
+}
+
+type sigResponse struct {
+	success			bool
+	log			string
 }
 
 func echo(lvl string, msg string) {
@@ -221,7 +230,38 @@ func setAppPerms(appCgroup string, outperm appOutPerms, appID string, sandboxEng
 	return true
 }
 
+func sendResponse (writer http.ResponseWriter, response sigResponse) {
+	jsonObj, err := json.Marshal(response)
+	if err != nil {
+		echo("warn", "Could not marshal response, falling back to standard response")
+		var respFallback sigResponse
+		respFallback.success = false
+		respFallback.log = "Could not marshal original response"
+		jsonObj, _ := json.Marshal(respFallback)
+		writer.Write(jsonObj)
+	}
+
+	writer.Write(jsonObj)
+}
+
+func unknownReqHandler (writer http.ResponseWriter, request *http.Request) {
+	defer request.Body.Close()
+	var resp sigResponse
+	resp.success = false
+	resp.log = "Unknown operation"
+	sendResponse(writer, resp)
+}
+
+func shutdownWorker (shutdownChan chan os.Signal) {
+	sig := <- shutdownChan
+	echo("info", "Shutting down charcoal on signal " + sig.String())
+	connNft.CloseLasting()
+}
+
 func main() {
+	sigChan := make(chan os.Signal, 1)
+	go shutdownWorker(sigChan)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 	go pecho.StartDaemon(logChan)
 	log.Println("Starting charcoal", version, ", establishing connection to nftables")
 	connNft, err = nftables.New()
@@ -229,4 +269,5 @@ func main() {
 		log.Fatalln("Could not establish connection to nftables: " + err.Error())
 	}
 	log.Println("Established connection")
+
 }
