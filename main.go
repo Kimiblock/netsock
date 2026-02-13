@@ -42,9 +42,9 @@ type appOutPerms struct {
 	appGPath		string
 }
 
-type sigResponse struct {
-	success			bool
-	log			string
+type ResponseSignal struct {
+	Success			bool
+	Log			string
 }
 
 type peerCreds struct {
@@ -238,25 +238,27 @@ func setAppPerms(appCgroup string, outperm appOutPerms, appID string, sandboxEng
 	return true
 }
 
-func sendResponse (writer http.ResponseWriter, response sigResponse) {
+func sendResponse (writer http.ResponseWriter, response ResponseSignal) {
 	jsonObj, err := json.Marshal(response)
 	if err != nil {
 		echo("warn", "Could not marshal response, falling back to standard response")
-		var respFallback sigResponse
-		respFallback.success = false
-		respFallback.log = "Could not marshal original response"
+		var respFallback ResponseSignal
+		respFallback.Success = false
+		respFallback.Log = "Could not marshal original response"
 		jsonObj, _ := json.Marshal(respFallback)
 		writer.Write(jsonObj)
+		return
 	}
 
+	writer.Header().Add("Content-Type", "application/json")
 	writer.Write(jsonObj)
 }
 
 func unknownReqHandler (writer http.ResponseWriter, request *http.Request) {
 	defer request.Body.Close()
-	var resp sigResponse
-	resp.success = false
-	resp.log = "Unknown operation"
+	var resp ResponseSignal
+	resp.Success = false
+	resp.Log = "Unknown operation"
 	cred := request.Context().Value(peerCreds{}).(peerCreds)
 	uid := cred.UID
 	echo("warn", "Got an unknown request from UID: " + strconv.Itoa(int(uid)))
