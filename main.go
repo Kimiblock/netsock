@@ -192,17 +192,17 @@ func buildNftFile (
 }
 
 /* Returns whether the operation is success or not */
-func setAppPerms(appCgroup string, outperm appOutPerms, appID string, sandboxEng string) bool {
+func setAppPerms(outperm appOutPerms, sandboxEng string) bool {
 	logChan <- []string{
 		"debug",
-		"Got firewall rules for " + appID + " from " + sandboxEng,
+		"Got firewall rules for " + outperm.appID + " from " + sandboxEng,
 	}
 	var table = nftables.Table {
-		Name:	sandboxEng + "-" + appID,
+		Name:	sandboxEng + "-" + outperm.appID,
 		Family:	unix.NFPROTO_INET,
 	}
 	tableExt, errList := connNft.ListTableOfFamily(
-		sandboxEng + "-" + appID,
+		sandboxEng + "-" + outperm.appID,
 		unix.NFPROTO_INET,
 	)
 	if errList != nil {
@@ -214,7 +214,7 @@ func setAppPerms(appCgroup string, outperm appOutPerms, appID string, sandboxEng
 		log.Println("Deleted previous table")
 	}
 
-	nftFile := buildNftFile(sandboxEng + "-" + appID, outperm)
+	nftFile := buildNftFile(sandboxEng + "-" + outperm.appID, outperm)
 	if len(nftFile) == 0 {
 		echo("warn", "Could not read generated nftfile")
 		return false
@@ -302,7 +302,17 @@ func addReqHandler (writer http.ResponseWriter, request *http.Request) {
 
 	info.appGPath = strings.ReplaceAll(pathG, "//", "/")
 
-	// TODO: generate cgroup path, and add rules
+	opRes := setAppPerms(info, requestJson.SandboxEng)
+
+	if opRes != true {
+		echo("warn", "Could not engage firewall on " + info.appID)
+		resp.Success = false
+		resp.Log = "Could not engage firewall on " + info.appID
+	} else {
+		resp.Success = true
+	}
+
+	sendResponse(writer, resp)
 }
 
 func unknownReqHandler (writer http.ResponseWriter, request *http.Request) {
