@@ -16,10 +16,10 @@ A filter for sandboxes
 
 ```
 type IncomingSig struct {
-	CgroupNested	string	// Nested control group path under /user.slice/user-1011.slice/user@1011.service
-	RawDenyList	string	// JSON encoded list of raw rejected destinations. Accepts strings and IPs, special string private is interpreted as private IPs. Note that port 53 is always allowed.
-	SandboxEng	string	// Sandbox engine ID
-	AppID		string	// App ID
+	CgroupNested	string		// Nested control group path under /user.slice/user-1011.slice/user@1011.service
+	RawDenyList	[]string	// JSON encoded list of raw rejected destinations. Accepts strings and IPs, special string private is interpreted as private IPs. Note that port 53 is always allowed.
+	SandboxEng	string		// Sandbox engine ID
+	AppID		string		// App ID
 }
 ```
 
