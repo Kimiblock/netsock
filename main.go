@@ -280,13 +280,41 @@ func addReqHandler (writer http.ResponseWriter, request *http.Request) {
 
 	err = json.Unmarshal(rawReq, &requestJson)
 	if err != nil {
-		echo("warn", "Could not read request: " + err.Error())
-		resp.Log = "Could not read request: " + err.Error()
+		echo("warn", "Could not read malformed request: " + err.Error())
+		resp.Log = "Could not read malformed request: " + err.Error()
 		sendResponse(writer, resp)
 		return
 	}
 
 	var info appOutPerms
+
+
+	var invalid bool
+	if len(requestJson.AppID) == 0 {
+		echo("warn", "Invalid request: empty field")
+		invalid = true
+	} else if len(requestJson.CgroupNested) == 0 {
+		echo("warn", "Invalid request: empty field")
+		invalid = true
+	} else if len(requestJson.SandboxEng) == 0 {
+		echo("warn", "Invalid request: empty field")
+		invalid = true
+	// TODO: if we add allow listing, this must be modified
+	// TODO: we must add rules clearing below
+	} else if len(requestJson.RawDenyList) == 0 {
+		echo("info", "Nothing to reject")
+		resp.Success = true
+		resp.Log = "Nothing to do"
+		sendResponse(writer, resp)
+		return
+	}
+	if invalid == true {
+		resp.Success = false
+		resp.Log = "Invalid request: empty field"
+		sendResponse(writer, resp)
+		return
+	}
+
 	info.denyIP = requestJson.RawDenyList
 	info.appID = requestJson.AppID
 
