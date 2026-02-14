@@ -126,7 +126,7 @@ func buildNftFile (
 							case nil:
 								v6DenyList = append(
 									v6DenyList,
-									tryResV4.String(),
+									tryRes.String(),
 								)
 							default:
 								v4DenyList = append(

@@ -1,5 +1,5 @@
 # charcoal
-A filter for sandboxes
+A per-app firewall solution for Linux desktop. This is meant to be used by Portable.
 
 ---
 
