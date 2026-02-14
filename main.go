@@ -114,9 +114,14 @@ func buildNftFile (
 						"warn",
 						"Could not resolve host " + val + ": " + err.Error(),
 						)
+						continue
 					}
 					for _, addr := range addrs {
-						tryResV4 := net.ParseIP(addr)
+						tryRes := net.ParseIP(addr)
+						if tryRes == nil {
+							continue
+						}
+						tryResV4 := tryRes.To4()
 						switch tryResV4 {
 							case nil:
 								v6DenyList = append(
