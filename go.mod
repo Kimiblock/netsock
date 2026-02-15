@@ -1,4 +1,4 @@
-module top.kimiblock.charcoal
+module top.kimiblock.netsock
 
 go 1.25.7
 

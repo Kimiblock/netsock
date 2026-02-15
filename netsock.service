@@ -3,13 +3,13 @@ Description=Per-app firewall for Linux desktop
 RefuseManualStop=yes
 Before=graphical.target
 
-Documentation=https://github.com/Kimiblock/charcoal
+Documentation=https://github.com/Kimiblock/netsock
 
 [Service]
 # TODO: implement readiness notification
-RuntimeDirectory=charcoal
+RuntimeDirectory=netsock
 Type=simple
-ExecStart=charcoal
+ExecStart=netsock
 TimeoutStartSec=120
 TimeoutStopSec=10
 Restart=always
