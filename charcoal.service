@@ -6,7 +6,8 @@ RefuseManualStop=yes
 Documentation=man:auditd(8) https://github.com/linux-audit/audit-documentation
 
 [Service]
-//TODO: implement readiness notification
+# TODO: implement readiness notification
+RuntimeDirectory=charcoal
 Type=simple
 ExecStart=charcoal
 TimeoutStartSec=120
