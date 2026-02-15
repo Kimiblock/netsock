@@ -247,12 +247,13 @@ func setAppPerms(outperm appOutPerms, sandboxEng string) bool {
 	echo("debug", "Got generated rule: " + nftFile)
 
 
-	cmd := exec.Command("nft", "-c", "-f")
+	cmd := exec.Command("nft", "-c", "-f", "-")
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		echo("warn", "Could not pipe stdin" + err.Error())
 		return false
 	}
+	cmd.Start()
 	_, err = io.WriteString(stdin, nftFile)
 	if err != nil {
 		echo("warn", "Could not write stdin: " + err.Error())
