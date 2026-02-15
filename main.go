@@ -164,7 +164,7 @@ func buildNftFile (
 
 
 
-	builder.WriteString("table inet " + tableName + " {\n")
+	builder.WriteString("add table inet " + tableName + " {\n")
 
 	builder.WriteString("set v4reject {\n")
 		builder.WriteString("type ipv4_addr;\n")
@@ -193,7 +193,7 @@ func buildNftFile (
 	builder.WriteString("}\n")
 
 	builder.WriteString("chain netsock {\n")
-		builder.WriteString("type filter hook output priority filter;\n")
+		builder.WriteString("type filter hook output priority -400;\n")
 		builder.WriteString("policy accept;\n")
 		builder.WriteString(
 			"socket cgroupv2 level 6 " + strconv.Quote(outperm.appGPath) + " tcp dport 53 accept\n",
@@ -243,7 +243,7 @@ func setAppPerms(outperm appOutPerms, sandboxEng string) bool {
 		sliceLen := len(sliceOut)
 		if sliceOut[sliceLen - 1] == sandboxEng + "-" + outperm.appID {
 			echo("debug", "Found existing table")
-			cmdDel := exec.Command("nft", "delete", "table", sandboxEng + "-" + outperm.appID)
+			cmdDel := exec.Command("nft", "delete", "table", "inet", sandboxEng + "-" + outperm.appID)
 			cmdDel.Stderr = os.Stderr
 			err = cmdDel.Run()
 			if err != nil {
@@ -255,6 +255,7 @@ func setAppPerms(outperm appOutPerms, sandboxEng string) bool {
 			break
 		}
 	}
+	echo("debug", "Finished scanning existing tables")
 
 
 	nftFile := buildNftFile(sandboxEng + "-" + outperm.appID, outperm)
@@ -307,6 +308,29 @@ func setAppPerms(outperm appOutPerms, sandboxEng string) bool {
 		return false
 	} else {
 		echo("debug", "Rules test success")
+	}
+
+	cmd = exec.Command("nft", "-f", "-")
+	stdin, err = cmd.StdinPipe()
+	if err != nil {
+		echo("warn", "Could not pipe stdin" + err.Error())
+		return false
+	}
+	cmd.Start()
+	_, err = io.WriteString(stdin, nftFile)
+	if err != nil {
+		echo("warn", "Could not write stdin: " + err.Error())
+		return false
+	}
+	stdin.Close()
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Wait()
+	if err != nil {
+		echo("warn", "Could not apply nftables rules: " + err.Error())
+		return false
+	} else {
+		echo("info", "Firewall enabled on " + outperm.appID)
 	}
 
 
@@ -402,7 +426,7 @@ func addReqHandler (writer http.ResponseWriter, request *http.Request) {
 	if opRes != true {
 		echo("warn", "Could not engage firewall on " + info.appID)
 		resp.Success = false
-		resp.Log = "Could not engage firewall on " + info.appID
+		resp.Log = "Could not engage firewall on " + info.appID + ". Check daemon logging."
 	} else {
 		resp.Success = true
 		notifyChan <- true
