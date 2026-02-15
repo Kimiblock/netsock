@@ -44,7 +44,7 @@ RemoveIPC=yes
 SystemCallArchitectures=native
 ProtectProc=invisible
 ProcSubset=pid
-PrivateUsers=yes
+PrivateUsers=no
 
 UMask=077
 
