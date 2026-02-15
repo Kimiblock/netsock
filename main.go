@@ -19,6 +19,7 @@ import (
 	"github.com/Kimiblock/pecho"
 	"github.com/google/nftables"
 	"golang.org/x/sys/unix"
+	"github.com/coreos/go-systemd/v22/daemon"
 )
 
 const (
@@ -29,6 +30,7 @@ var (
 	connNft		*nftables.Conn
 	err		error
 	logChan		= pecho.MkChannel()
+	notifyChan 	= make(chan bool, 128)
 )
 
 /* Special strings may be interpreted
@@ -65,9 +67,25 @@ func echo(lvl string, msg string) {
 	logChan <- []string{lvl, msg}
 }
 
-/*
-	This builds a nft file, caller should close channel to indicate done
-*/
+func notifier(notifierChan chan bool) {
+	daemon.SdNotify(false, daemon.SdNotifyReady)
+	var AppliedProcs int
+
+	for arg := range notifierChan {
+		if arg == true {
+			AppliedProcs++
+		} else {
+			AppliedProcs--
+		}
+		var trailingS string
+		if AppliedProcs > 1 {
+			trailingS = "s"
+		}
+		daemon.SdNotify(false, "STATUS=Filtering connections for " + strconv.Itoa(AppliedProcs) + "app" + trailingS)
+	}
+}
+
+
 func buildNftFile (
 	tableName string,
 	outperm appOutPerms,
@@ -217,6 +235,7 @@ func setAppPerms(outperm appOutPerms, sandboxEng string) bool {
 	} else {
 		connNft.DelTable(&table)
 		log.Println("Deleted previous table")
+		notifyChan <- false
 	}
 
 	nftFile := buildNftFile(sandboxEng + "-" + outperm.appID, outperm)
@@ -343,6 +362,7 @@ func addReqHandler (writer http.ResponseWriter, request *http.Request) {
 		resp.Log = "Could not engage firewall on " + info.appID
 	} else {
 		resp.Success = true
+		notifyChan <- true
 	}
 
 	sendResponse(writer, resp)
@@ -440,6 +460,7 @@ func signalListener (listener net.Listener) {
 
 func main() {
 	var unixListener net.Listener
+	go notifier(notifyChan)
 	sigChan := make(chan os.Signal, 1)
 	blockerChan := make(chan int, 1)
 	go shutdownWorker(sigChan, unixListener, blockerChan)

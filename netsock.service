@@ -6,9 +6,9 @@ Before=graphical.target
 Documentation=https://github.com/Kimiblock/netsock
 
 [Service]
-# TODO: implement readiness notification
 RuntimeDirectory=netsock
-Type=simple
+Type=notify
+NotifyAccess=exec
 ExecStart=netsock
 TimeoutStartSec=120
 TimeoutStopSec=10
