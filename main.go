@@ -193,7 +193,7 @@ func buildNftFile (
 	builder.WriteString("}\n")
 
 	builder.WriteString("chain netsock {\n")
-		builder.WriteString("type filter hook output priority filter;\n")
+		builder.WriteString("type filter hook output priority -400;\n")
 		builder.WriteString("policy accept;\n")
 		builder.WriteString(
 			"socket cgroupv2 level 6 " + strconv.Quote(outperm.appGPath) + " tcp dport 53 accept\n",
