@@ -1,5 +1,5 @@
-# charcoal
-A per-app firewall solution for Linux desktop. This is meant to be used by Portable.
+# Netsock
+A per-app firewall solution for Linux desktop. This is meant to be used by Portable. The name is derived from stockings and network.
 
 ---
 
