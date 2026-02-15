@@ -172,7 +172,7 @@ func buildNftFile (
 			builder.WriteString("}\n")
 	builder.WriteString("}\n")
 
-	builder.WriteString("chain charcoal {\n")
+	builder.WriteString("chain netsock {\n")
 		builder.WriteString("type filter hook output priority filter;\n")
 		builder.WriteString("policy accept;\n")
 		builder.WriteString(
@@ -362,7 +362,7 @@ func unknownReqHandler (writer http.ResponseWriter, request *http.Request) {
 
 func shutdownWorker (shutdownChan chan os.Signal, listener net.Listener, block chan int) {
 	sig := <- shutdownChan
-	echo("info", "Shutting down charcoal on signal " + sig.String())
+	echo("info", "Shutting down netsock on signal " + sig.String())
 	connNft.CloseLasting()
 	if listener != nil {
 		listener.Close()
@@ -375,10 +375,10 @@ func signalListener (listener net.Listener) {
 	runtimeDir := os.Getenv("RUNTIME_DIRECTORY")
 	if len(runtimeDir) == 0 {
 		echo("debug", "Could not read RUNTIME_DIRECTORY from environment")
-		runtimeDir = "/run/charcoal"
+		runtimeDir = "/run/netsock"
 	}
 
-	if runtimeDir != "/run/charcoal" {
+	if runtimeDir != "/run/netsock" {
 		echo("warn", "You have changed the runtime directory. Downstream apps may not support this.")
 	}
 	sockPath := filepath.Join(runtimeDir, "control.sock")
@@ -446,7 +446,7 @@ func main() {
 	go signalListener(unixListener)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 	go pecho.StartDaemon(logChan)
-	log.Println("Starting charcoal", version, ", establishing connection to nftables")
+	log.Println("Starting netsock", version, ", establishing connection to nftables")
 	connNft, err = nftables.New()
 	if err != nil {
 		log.Fatalln("Could not establish connection to nftables: " + err.Error())

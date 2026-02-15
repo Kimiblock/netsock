@@ -5,7 +5,7 @@ A per-app firewall solution for Linux desktop. This is meant to be used by Porta
 
 # Environment variables:
 
-- `RUNTIME_DIRECTORY`: specify where charcoal should place the control socket in. A sensible default is `/run/charcoal`, set by systemd. Which makes charcoal listen on `/run/charcoal/control.sock`.
+- `RUNTIME_DIRECTORY`: specify where netsock should place the control socket in. A sensible default is `/run/netsock`, set by systemd. Which makes netsock listen on `/run/netsock/control.sock`.
 	* Downstream apps may not support different socket path
 
 ---
