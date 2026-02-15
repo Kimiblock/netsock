@@ -164,7 +164,7 @@ func buildNftFile (
 
 
 
-	builder.WriteString("table inet " + tableName + " {\n")
+	builder.WriteString("add table inet " + tableName + " {\n")
 
 	builder.WriteString("set v4reject {\n")
 		builder.WriteString("type ipv4_addr;\n")
@@ -243,7 +243,7 @@ func setAppPerms(outperm appOutPerms, sandboxEng string) bool {
 		sliceLen := len(sliceOut)
 		if sliceOut[sliceLen - 1] == sandboxEng + "-" + outperm.appID {
 			echo("debug", "Found existing table")
-			cmdDel := exec.Command("nft", "delete", "table", sandboxEng + "-" + outperm.appID)
+			cmdDel := exec.Command("nft", "delete", "table", "inet", sandboxEng + "-" + outperm.appID)
 			cmdDel.Stderr = os.Stderr
 			err = cmdDel.Run()
 			if err != nil {
@@ -311,9 +311,21 @@ func setAppPerms(outperm appOutPerms, sandboxEng string) bool {
 	}
 
 	cmd = exec.Command("nft", "-f", "-")
+	stdin, err = cmd.StdinPipe()
+	if err != nil {
+		echo("warn", "Could not pipe stdin" + err.Error())
+		return false
+	}
+	cmd.Start()
+	_, err = io.WriteString(stdin, nftFile)
+	if err != nil {
+		echo("warn", "Could not write stdin: " + err.Error())
+		return false
+	}
+	stdin.Close()
 	cmd.Stderr = os.Stderr
 
-	err = cmd.Run()
+	err = cmd.Wait()
 	if err != nil {
 		echo("warn", "Could not apply nftables rules: " + err.Error())
 		return false
