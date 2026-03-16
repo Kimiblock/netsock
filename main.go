@@ -432,7 +432,7 @@ func addReqHandler (writer http.ResponseWriter, request *http.Request) {
 	info.appID = requestJson.AppID
 
 	pathTemp := []string{
-		"/user.slice/user-1011.slice/user@1011.service/",
+		"/user.slice/user-" + strconv.Itoa(int(uid)) + ".slice/user@" + strconv.Itoa(int(uid)) + ".service/",
 		requestJson.CgroupNested,
 	}
 
